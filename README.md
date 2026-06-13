@@ -3,7 +3,7 @@
 Daily air-travel demand forecasting on real public data, with three models built and
 compared from the ground up — and every forecast scored against actuals the model never saw.
 
-**Live site:** https://YOUR_USERNAME.github.io/tsa-forecast/
+**Live site:** https://suzith257.github.io/tsa-forecast//
 
 ---
 
