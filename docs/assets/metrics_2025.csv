@@ -1,0 +1,4 @@
+model,MAPE,Bias
+manual,5.27,1.08
+sarima,16.19,14.84
+prophet,5.34,2.94

@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TSA Travel Demand Forecasting</title>
+<style>
+  :root {
+    --ink: #14181d;
+    --paper: #fbfaf7;
+    --line: #d9d4c7;
+    --muted: #6b6f76;
+    --manual: #2E8B57;
+    --sarima: #C44E52;
+    --prophet: #1F4E79;
+    --accent: #1F4E79;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .mono {
+    font-family: "SF Mono", "JetBrains Mono", "Roboto Mono", Menlo, Consolas, monospace;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 0 24px; }
+
+  /* ---- Hero ---- */
+  header {
+    border-bottom: 2px solid var(--ink);
+    padding: 56px 0 0;
+  }
+  .eyebrow {
+    font-family: "SF Mono", monospace;
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 18px;
+  }
+  h1 {
+    font-size: clamp(34px, 6vw, 58px);
+    line-height: 1.04;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-bottom: 18px;
+  }
+  .lede {
+    font-size: clamp(17px, 2.3vw, 21px);
+    color: #2b2f35;
+    max-width: 640px;
+    margin-bottom: 36px;
+  }
+  .hero-fig { margin: 0 0 0; }
+  .hero-fig img { width: 100%; display: block; border-top: 1px solid var(--line); }
+  .hero-cap {
+    font-family: "SF Mono", monospace;
+    font-size: 12px;
+    color: var(--muted);
+    padding: 10px 0 40px;
+    letter-spacing: 0.02em;
+  }
+
+  /* ---- Section scaffolding ---- */
+  section { padding: 52px 0; border-bottom: 1px solid var(--line); }
+  .sec-no {
+    font-family: "SF Mono", monospace;
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  h2 {
+    font-size: clamp(24px, 4vw, 34px);
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    margin-bottom: 20px;
+    line-height: 1.12;
+  }
+  h3 {
+    font-size: 19px;
+    font-weight: 600;
+    margin: 28px 0 10px;
+  }
+  p { margin-bottom: 16px; max-width: 680px; }
+  p .mono { font-size: 0.92em; }
+  strong { font-weight: 600; }
+  .muted { color: var(--muted); }
+
+  figure { margin: 26px 0; }
+  figure img {
+    width: 100%;
+    display: block;
+    border: 1px solid var(--line);
+    background: #fff;
+    border-radius: 2px;
+  }
+  figcaption {
+    font-family: "SF Mono", monospace;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 8px;
+    letter-spacing: 0.01em;
+  }
+
+  /* ---- Monthly panel grid ---- */
+  .panels { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 26px; }
+  .panel img { width: 100%; display: block; border: 1px solid var(--line); border-radius: 2px; background: #fff; }
+  .panel .tag {
+    font-family: "SF Mono", monospace;
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 6px;
+    display: block;
+  }
+  .lines-4 { color: var(--sarima); }
+  .lines-5 { color: var(--manual); }
+
+  /* ---- Tables ---- */
+  table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 15px; }
+  .mono-table { font-family: "SF Mono", monospace; font-size: 13.5px; }
+  th, td { text-align: right; padding: 9px 14px; border-bottom: 1px solid var(--line); }
+  th:first-child, td:first-child { text-align: left; }
+  thead th {
+    font-family: "SF Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1.5px solid var(--ink);
+  }
+  tbody tr.best td { background: #eef4ee; }
+  .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 7px; vertical-align: baseline; }
+  .d-manual { background: var(--manual); }
+  .d-sarima { background: var(--sarima); }
+  .d-prophet { background: var(--prophet); }
+
+  /* ---- Callout ---- */
+  .note {
+    border-left: 3px solid var(--accent);
+    background: #f1f3f6;
+    padding: 16px 20px;
+    margin: 24px 0;
+    border-radius: 0 3px 3px 0;
+  }
+  .note p { margin: 0; max-width: none; }
+  .note .label {
+    font-family: "SF Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  .verdict {
+    background: var(--ink);
+    color: var(--paper);
+    border-radius: 4px;
+    padding: 32px;
+    margin: 28px 0 8px;
+  }
+  .verdict h3 { color: #fff; margin-top: 0; }
+  .verdict p { color: #d7dade; max-width: none; }
+  .verdict .big {
+    font-size: 22px;
+    color: #fff;
+    margin-bottom: 14px;
+  }
+
+  footer {
+    padding: 44px 0 80px;
+    font-family: "SF Mono", monospace;
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+  footer a { color: var(--accent); }
+
+  ul.clean { list-style: none; margin: 14px 0; }
+  ul.clean li { padding: 6px 0 6px 22px; position: relative; max-width: 680px; }
+  ul.clean li::before {
+    content: "→"; position: absolute; left: 0; color: var(--accent);
+  }
+
+  @media (max-width: 680px) {
+    .panels { grid-template-columns: 1fr; }
+    section { padding: 40px 0; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="eyebrow">Time-series forecasting · real public data</div>
+    <h1>Forecasting daily air-travel demand</h1>
+    <p class="lede">Seven years of TSA checkpoint data, three forecasting models built and
+      compared from the ground up, and an honest accounting of how close each one came to
+      reality.</p>
+  </div>
+  <div class="hero-fig">
+    <img src="assets/data_2019_2025.png" alt="TSA daily passenger throughput, 2019 to 2025">
+  </div>
+  <div class="wrap">
+    <div class="hero-cap">FIG 0 · Daily passengers screened at U.S. checkpoints, Jan 2019 – Dec 2025.
+      The 2020–21 collapse is kept for context but excluded from model training.</div>
+  </div>
+</header>
+
+<main>
+
+  <!-- WHAT THIS IS -->
+  <section>
+    <div class="wrap">
+      <div class="sec-no">01 · What this is</div>
+      <h2>A forecasting system, tested the way a real planning team would test it</h2>
+      <p>The U.S. Transportation Security Administration publishes the number of passengers
+        screened at its checkpoints every day. It is one of the cleanest public proxies for
+        travel demand that exists: daily resolution, strong weekly rhythm, sharp holiday
+        structure, and seven unbroken years of history.</p>
+      <p>This project uses that data to answer a practical question: <strong>how accurately
+        can next year's daily demand be predicted, and does the forecast hold up when checked
+        against what actually happened?</strong> Three models are built, each forecast is made
+        on data the model has never seen, and every result on this page is scored against real
+        actuals — nothing is fitted in hindsight.</p>
+      <div class="note">
+        <span class="label">Method in one line</span>
+        <p>Train on 2022–2024 → forecast 2025 → score against real 2025 → refit through 2025
+          → forecast 2026. The year being predicted is never part of the training data.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2025 VALIDATION -->
+  <section>
+    <div class="wrap">
+      <div class="sec-no">02 · The validation year</div>
+      <h2>2025: forecast first, then compare</h2>
+      <p>The models were trained only on 2022–2024 and asked to forecast all of 2025. Holding
+        the entire year back is the real test — anyone can fit a curve to data they've already
+        seen. The black line is what actually happened; the dashed lines are the three
+        forecasts, made before any of it was known.</p>
+      <figure>
+        <img src="assets/forecast_2025_yearly.png" alt="2025 forecast versus actual, full year">
+        <figcaption>FIG 1 · Full-year 2025. Manual and Prophet track actual closely; SARIMA
+          (red) rides consistently high — it has no annual-seasonality term, so it extrapolates
+          the recent growth trend straight through the year.</figcaption>
+      </figure>
+      <table class="mono-table">
+        <thead>
+          <tr><th>Model · 2025</th><th>MAPE</th><th>Bias</th><th>Accuracy*</th></tr>
+        </thead>
+        <tbody>
+          <tr class="best"><td><span class="dot d-manual"></span>Manual decomposition</td><td>5.27%</td><td>+1.08%</td><td>94.7%</td></tr>
+          <tr><td><span class="dot d-prophet"></span>Prophet</td><td>5.34%</td><td>+2.94%</td><td>94.7%</td></tr>
+          <tr><td><span class="dot d-sarima"></span>SARIMA</td><td>16.19%</td><td>+14.84%</td><td>83.8%</td></tr>
+        </tbody>
+      </table>
+      <p class="muted mono" style="font-size:12px;">*Accuracy = 100% − mean daily absolute percentage error.
+        Lower MAPE and bias are better.</p>
+      <p>The hand-built decomposition model edges out Prophet on the year it had never seen —
+        a model written from first principles matching a purpose-built forecasting library.</p>
+    </div>
+  </section>
+
+  <!-- APPROACH -->
+  <section>
+    <div class="wrap">
+      <div class="sec-no">03 · The three models</div>
+      <h2>One built by hand, two as benchmarks</h2>
+
+      <h3><span class="dot d-manual"></span>Manual decomposition</h3>
+      <p>A multiplicative model built from scratch, with no forecasting library:
+        <span class="mono">passengers = level × annual × day-of-week × holiday × bridge</span>.
+        The level is a damped log-linear trend; the annual shape comes from six Fourier
+        harmonics of day-of-year; day-of-week and holiday effects are geometric-mean factors;
+        and "bridge" factors capture the travel surge on the days <em>around</em> a holiday —
+        because the holiday itself is usually a low-travel day. Every component is inspectable.</p>
+
+      <h3><span class="dot d-prophet"></span>Prophet</h3>
+      <p>Facebook's forecasting library, given the full U.S. federal-holiday calendar. It fits
+        trend, weekly and yearly seasonality, and holiday effects jointly. The benchmark to beat.</p>
+
+      <h3><span class="dot d-sarima"></span>SARIMA</h3>
+      <p>A classical statistical model — <span class="mono">SARIMA(1,1,1)(1,1,1,7)</span> on log
+        passengers. It captures the weekly cycle but has no annual term, included deliberately
+        to show what holiday-aware modelling adds.</p>
+    </div>
+  </section>
+
+  <!-- LOCKED REFRESH SETUP -->
+  <section>
+    <div class="wrap">
+      <div class="sec-no">04 · Planning under a locked horizon</div>
+      <h2>You can't re-plan a month you're already in</h2>
+      <p>A real planning team can't rewrite February's staffing once February has started. So
+        the 2026 forecast runs two ways. The <strong>locked annual</strong> forecast is made
+        once, from data through end-2025, and frozen for the whole year. The
+        <strong>refreshed</strong> forecast retrains as each month's actuals close — but with a
+        one-month lock-out: data through end of January can only revise <em>March</em> onward,
+        because February is already underway.</p>
+      <p>So January and February show three locked forecasts against actual. From March, the
+        refreshed lines (manual and Prophet) appear alongside them — letting you see directly
+        whether retraining on fresh data helps.</p>
+      <div class="note">
+        <span class="label">Why SARIMA isn't in the refreshed lines</span>
+        <p>Refit on a short window, SARIMA collapses downward — its bias swings from +12.9% to
+          −24%, worse than leaving it frozen. That fragility is a finding in itself: classical
+          models need careful retraining, so it's kept out of the refreshed panels and flagged
+          in the comparison below.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- MONTHLY PANELS -->
+  <section>
+    <div class="wrap">
+      <div class="sec-no">05 · 2026, month by month</div>
+      <h2>Forecasts vs. actual, as the year unfolds</h2>
+      <p>Solid black is actual. Dotted lines are the locked annual forecasts; bolder dashed
+        lines (from March) are the refreshed forecasts. Each panel is the real comparison for
+        that month.</p>
+      <div class="panels">
+        <div class="panel"><img src="assets/2026_01.png" alt="January 2026"><span class="tag lines-4">January · 3 locked + actual</span></div>
+        <div class="panel"><img src="assets/2026_02.png" alt="February 2026"><span class="tag lines-4">February · 3 locked + actual</span></div>
+        <div class="panel"><img src="assets/2026_03.png" alt="March 2026"><span class="tag lines-5">March · refreshed lines begin</span></div>
+        <div class="panel"><img src="assets/2026_04.png" alt="April 2026"><span class="tag lines-5">April · locked + refreshed</span></div>
+        <div class="panel"><img src="assets/2026_05.png" alt="May 2026"><span class="tag lines-5">May · locked + refreshed</span></div>
+        <div class="panel"><img src="assets/2026_06.png" alt="June 2026"><span class="tag lines-5">June · through data cut-off</span></div>
+      </div>
+      <div class="note" style="margin-top:30px;">
+        <span class="label">An honest read of spring</span>
+        <p>Through April and May the forecasts sit slightly above actual. That's not a glitch —
+          2026 demand flattened against the growth the models learned from 2022–2025. No model
+          trained on history predicts a trend break the moment it happens; catching it is the
+          job of the refresh and the monitoring, which is exactly why both exist.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ACCURACY BY MONTH -->
+  <section>
+    <div class="wrap">
+      <div class="sec-no">06 · Accuracy by month</div>
+      <h2>How often was the forecast usable?</h2>
+      <p>For planning, what matters isn't just the average error — it's how many individual days
+        land within a usable margin. Below: mean daily forecast accuracy
+        (<span class="mono">1 − |actual − forecast| ÷ actual</span>) and the share of days at or
+        above 90% accuracy, per month, for the strongest model of each type.</p>
+      <table class="mono-table">
+        <thead>
+          <tr><th>2026</th><th>Manual (locked)</th><th>Prophet (locked)</th><th>Prophet (refreshed)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>January</td><td>91.0% · 74%</td><td>91.3% · 74%</td><td class="muted">—</td></tr>
+          <tr><td>February</td><td>94.8% · 93%</td><td>95.4% · 96%</td><td class="muted">—</td></tr>
+          <tr><td>March</td><td>96.1% · 97%</td><td>96.1% · 90%</td><td>96.4% · 94%</td></tr>
+          <tr><td>April</td><td>94.4% · 83%</td><td>95.1% · 83%</td><td>95.6% · 87%</td></tr>
+          <tr><td>May</td><td>94.4% · 84%</td><td>94.3% · 87%</td><td>94.8% · 90%</td></tr>
+          <tr><td>June</td><td>94.9% · 100%</td><td>95.1% · 100%</td><td>95.8% · 100%</td></tr>
+        </tbody>
+      </table>
+      <p class="muted mono" style="font-size:12px;">Each cell: mean daily accuracy · share of days ≥ 90% accurate.</p>
+      <p>January is the hardest month — furthest from the training cut-off and deep in volatile
+        post-holiday travel — and accuracy climbs steadily as the year settles. Refreshing the
+        forecast lifts both the average and the share of usable days.</p>
+    </div>
+  </section>
+
+  <!-- METRICS COMPARISON -->
+  <section>
+    <div class="wrap">
+      <div class="sec-no">07 · The comparison</div>
+      <h2>Does refreshing help? Yes — for the models worth refreshing</h2>
+      <figure>
+        <img src="assets/metrics_2026.png" alt="2026 forecast accuracy, locked versus refreshed, by model">
+        <figcaption>FIG 2 · 2026 MAPE, locked vs. refreshed. Lower is better.</figcaption>
+      </figure>
+      <table class="mono-table">
+        <thead>
+          <tr><th>2026 · MAPE</th><th>Locked</th><th>Refreshed</th><th>Change</th></tr>
+        </thead>
+        <tbody>
+          <tr class="best"><td><span class="dot d-prophet"></span>Prophet</td><td>5.54%</td><td>4.38%</td><td>−1.16</td></tr>
+          <tr class="best"><td><span class="dot d-manual"></span>Manual</td><td>5.82%</td><td>4.64%</td><td>−1.18</td></tr>
+          <tr><td><span class="dot d-sarima"></span>SARIMA</td><td>14.50%</td><td>23.68%</td><td>+9.18</td></tr>
+        </tbody>
+      </table>
+      <p>Prophet and the manual model both improve by more than a full percentage point when
+        retrained on fresh data. SARIMA gets <em>worse</em> — it destabilises under short-window
+        refit. Refresh cadence isn't a free lunch; it's a decision that depends on the model.</p>
+    </div>
+  </section>
+
+  <!-- VERDICT -->
+  <section>
+    <div class="wrap">
+      <div class="sec-no">08 · What's best</div>
+      <h2>The verdict</h2>
+      <div class="verdict">
+        <h3>Prophet (refreshed) is the most accurate; the manual model is the most instructive.</h3>
+        <p class="big">Prophet refreshed: 4.38% MAPE · Manual refreshed: 4.64% MAPE</p>
+        <p>For day-level demand forecasting, anything in the ~5% range is at the contact-center
+          industry standard. Both leading models clear it. Prophet wins by a whisker on accuracy,
+          but the hand-built decomposition — which actually beat Prophet on the 2025 validation
+          year — proves the result isn't a black box: every factor it uses can be read,
+          explained, and defended.</p>
+      </div>
+      <ul class="clean">
+        <li>Use the holiday-aware models (Prophet, manual). SARIMA is a benchmark, not a planning tool.</li>
+        <li>Refresh monthly under a locked horizon — it reliably improves the models that can take it.</li>
+        <li>Watch bias, not just error size: a small but consistent over-forecast is the early signal of a demand shift.</li>
+      </ul>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>Data: TSA Checkpoint Travel Numbers · <a href="https://www.tsa.gov/travel/passenger-volumes">tsa.gov/travel/passenger-volumes</a>.
+      Retrieved live with a cached fallback. All figures computed from real data; the forecast
+      year is never seen during training.</p>
+    <p style="margin-top:10px;">Built in Python — pandas, statsmodels, Prophet, matplotlib.</p>
+  </div>
+</footer>
+
+</body>
+</html>

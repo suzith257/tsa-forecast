@@ -1,0 +1,8 @@
+pandas
+numpy
+matplotlib
+statsmodels
+prophet
+holidays
+requests
+lxml

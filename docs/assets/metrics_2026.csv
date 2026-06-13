@@ -1,0 +1,7 @@
+model,type,MAPE,Bias
+manual,locked,5.82,1.66
+manual,refreshed,4.64,2.81
+sarima,locked,14.5,12.91
+sarima,refreshed,23.68,-23.96
+prophet,locked,5.54,3.09
+prophet,refreshed,4.38,3.25
